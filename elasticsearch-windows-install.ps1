@@ -225,7 +225,7 @@ function Download-ElasticSearch
 			$client = new-object System.Net.WebClient 
 
             lmsg "Downloading Elasticsearch version $elasticVersion from $source to $destination"
-
+			
 			$client.downloadFile($source, $destination) | Out-Null
 		}catch [System.Net.WebException],[System.Exception]{
 			lerr $_.Exception.Message
@@ -546,10 +546,11 @@ function Install-WorkFlow
     $firstDrive = (get-location).Drive.Name
     
     # Download Jdk
-	$jdkSource = Download-Jdk $firstDrive
+	choco install jdk8
+#	$jdkSource = Download-Jdk $firstDrive
 	
 	# Install Jdk
-	$jdkInstallLocation = Install-Jdk $jdkSource $firstDrive
+#	$jdkInstallLocation = Install-Jdk $jdkSource $firstDrive
 
 	# Download elastic search zip
 	$elasticSearchZip = Download-ElasticSearch $elasticSearchVersion $firstDrive
@@ -559,7 +560,7 @@ function Install-WorkFlow
 	$elasticSearchInstallLocation = Install-ElasticSearch $firstDrive $elasticSearchZip
 
 	# Set JAVA_HOME
-    SetEnv-JavaHome $jdkInstallLocation
+ #   SetEnv-JavaHome $jdkInstallLocation
 	
 	# Configure cluster name and other properties
 	# Cluster name
@@ -607,8 +608,8 @@ function Install-WorkFlow
         lmsg 'Configure node as master and data'
         $textToAppend = $textToAppend + "`nnode.master: true`nnode.data: true"
     }
-
-	$textToAppend = $textToAppend + "`ndiscovery.zen.minimum_master_nodes: "+MinMasterNodes($discoveryEndpoints);
+[string] $m=MinMasterNodes($discoveryEndpoints)
+	$textToAppend = $textToAppend + "`ndiscovery.zen.minimum_master_nodes: $m" 
     $textToAppend = $textToAppend + "`ndiscovery.zen.ping.multicast.enabled: false"
 
     if($ipAddresses -ne $null)
@@ -677,8 +678,8 @@ function Install-WorkFlow
     {
         if ($elasticSearchVersion -match '2.')
         {
-            cmd.exe /C "$elasticSearchBin\plugin.bat install license"
-            cmd.exe /C "$elasticSearchBin\plugin.bat install marvel-agent"
+#            cmd.exe /C "$elasticSearchBin\plugin.bat install license"
+#            cmd.exe /C "$elasticSearchBin\plugin.bat install marvel-agent"
         }
         else
         {
