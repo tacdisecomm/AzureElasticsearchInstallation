@@ -546,7 +546,7 @@ function Install-WorkFlow
     $firstDrive = (get-location).Drive.Name
     
     # Download Jdk
-	choco install jdk8
+	choco install jdk8 -y
 #	$jdkSource = Download-Jdk $firstDrive
 	
 	# Install Jdk
