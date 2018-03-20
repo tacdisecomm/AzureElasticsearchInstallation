@@ -311,26 +311,7 @@ function Install-ElasticSearch ($driveLetter, $elasticSearchZip, $subFolder = $e
 	return $elasticSearchPath
 }
 
-function Implode-Host([string]$discoveryHost)
-{
-    # Discovery host must be in a given format e.g. 10.0.0.4-3 for the below code to work
-    $discoveryHost = $discoveryHost.Trim()
 
-    $ipPrefix = $discoveryHost.Substring(0, $discoveryHost.LastIndexOf('.'))
-    $dotSplitArr = $discoveryHost.Split('.')
-    $lastDigit = $dotSplitArr[$dotSplitArr.Length-1].Split('-')[0]
-    $loop = $dotSplitArr[$dotSplitArr.Length-1].Split('-')[1]
-
-    $ipRange = @(0) * $loop
-    for($i=0; $i -lt $loop; $i++)
-    {
-        $format = "$ipPrefix." + ($i+ $lastDigit)
-        $ipRange[$i] = '"' +$format + '"'
-    }
-
-    $addresses = $ipRange -join ','
-    return $addresses
-}
 
 
 function MinMasterNodes([string]$discoveryHost)
@@ -338,39 +319,11 @@ function MinMasterNodes([string]$discoveryHost)
     [decimal] $noOfNodes = $discoveryHost.Trim().Split('-')[1];
     return [math]::floor($noOfNodes/2)+1;
 }
-function Implode-Host2([string]$discoveryHost, [string]$nodeEndpoint)
+function Implode-Host([string]$discoveryHost, [string]$nodeEndpoint)
 {
-    # Discovery host must be in a given format e.g. 10.0.0.1-3 for the below code to work
+    # Discovery host must be in a given format e.g. 10.0.0.1,10.0.0.2,10.0.0.3-3 for the below code to work
     # 10.0.0.1-3 would be converted to "10.0.0.10 10.0.0.11 10.0.0.12"
-    $discoveryHost = $discoveryHost.Trim()
-
-    $dashSplitArr = $discoveryHost.Split('-')
-    $prefixAddress = $dashSplitArr[0]
-    $loop = $dashSplitArr[1]
-
-
-    
-    $ipRange = @(0) * $loop
-    if($nodeEndpoint)
-    {
-        # If node endpoint is supplied, make array shorter.
-        $ipRange = @(0) * ($loop-1)    
-    }
-
-    for($i=0; $i -lt $loop; $i++)
-    {
-        $format = "$prefixAddress$i"
-
-        # Do not add node endpoint
-        if($format -ne $nodeEndpoint)
-        {
-            $ipRange[$i] = '"' +$format + '"'
-        }
-        
-    }
-    $addresses = $ipRange -join ','
-    
-    return $addresses
+    return $discoveryHost.Trim().Split('-')[0];
 }
 
 
@@ -567,7 +520,7 @@ function Install-WorkFlow
 	if($elasticClusterName.Length -eq 0) { $elasticClusterName = 'elasticsearch_cluster' }
         
     # Unicast host setup
-    if($discoveryEndpoints.Length -ne 0) { $ipAddresses = Implode-Host2 $discoveryEndpoints $nodeEndpoint }
+    if($discoveryEndpoints.Length -ne 0) { $ipAddresses = Implode-Host $discoveryEndpoints $nodeEndpoint }
 		
 	# Extract install folders
 	$elasticSearchBinParent = (gci -path $elasticSearchInstallLocation -filter "bin" -Recurse).Parent.FullName
@@ -648,7 +601,7 @@ function Install-WorkFlow
     # configure marvel as required
     if($marvelEndpoints.Length -ne 0)
     {
-        $marvelIPAddresses = Implode-Host2 $marvelEndpoints
+        $marvelIPAddresses = Implode-Host $marvelEndpoints
         if ($elasticSearchVersion -match '2.')
         {
             $textToAppend = $textToAppend + "`nmarvel.agent.exporters:`n  id1:`n    type: http`n    host: [$marvelIPAddresses]"
