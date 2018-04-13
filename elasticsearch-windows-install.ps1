@@ -79,12 +79,12 @@ $Logfile = "c:\installelasticsearch.log"
 
 function Log-Output(){
     $args | Write-Host -ForegroundColor Cyan
-    Add-content $Logfile -value $$args
+    Add-content $Logfile -value $args
 }
 
 function Log-Error(){
     $args | Write-Host -ForegroundColor Red
-    Add-content $Logfile -value $$args
+    Add-content $Logfile -value $args
 }
 
 Set-Alias -Name lmsg -Value Log-Output -Description "Displays an informational message in green color" 
