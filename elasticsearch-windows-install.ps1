@@ -75,12 +75,16 @@ Param(
 # To set the env vars permanently, need to use registry location
 Set-Variable regEnvPath -Option Constant -Value 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment'
 
+$Logfile = "c:\installelasticsearch.log"
+
 function Log-Output(){
-	$args | Write-Host -ForegroundColor Cyan
+    $args | Write-Host -ForegroundColor Cyan
+    Add-content $Logfile -value $$args
 }
 
 function Log-Error(){
-	$args | Write-Host -ForegroundColor Red
+    $args | Write-Host -ForegroundColor Red
+    Add-content $Logfile -value $$args
 }
 
 Set-Alias -Name lmsg -Value Log-Output -Description "Displays an informational message in green color" 
@@ -211,6 +215,7 @@ function Download-ElasticSearch
         [Parameter(Mandatory=$true)]
         [string]$targetDrive
     )
+    lmsg "Download-ElasticSearch start"
 	# download ElasticSearch from a given source URL to destination folder
 	try{
 			$source = if ($elasticVersion -match '2.') {"https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/zip/elasticsearch/$elasticVersion/elasticsearch-$elasticVersion.zip"} else { "https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-$elasticVersion.zip" }
@@ -232,12 +237,12 @@ function Download-ElasticSearch
             lerr $_.Exception.StackTrace
 			Break
 		}
-
+        lmsg "Download-ElasticSearch end"
 	return $destination
 }
 
 function Unzip-Archive($archive, $destination){
-	
+	lmsg "Unzip-Archive start"
 	$shell = new-object -com shell.application
 
 	$zip = $shell.NameSpace($archive)
@@ -252,7 +257,8 @@ function Unzip-Archive($archive, $destination){
 	$destination = $shell.NameSpace($destination)
 
     #TODO a progress dialog pops up though not sure of its effect on the deployment
-	$destination.CopyHere($zip.Items())
+    $destination.CopyHere($zip.Items())
+    lmsg "Unzip-Archive end"
 }
 
 function SetEnv-JavaHome($jdkInstallLocation)
@@ -329,6 +335,7 @@ function Implode-Host([string]$discoveryHost, [string]$nodeEndpoint)
 
 function ElasticSearch-InstallService($scriptPath)
 {
+    lmsg "ElasticSearch-InstallService start"
 	# Install and start elastic search as a service
 	$elasticService = (get-service | Where-Object {$_.Name -match "elasticsearch"}).Name
 	if($elasticService -eq $null) 
@@ -342,11 +349,14 @@ function ElasticSearch-InstallService($scriptPath)
             throw "Command '$scriptPath': exit code: $LASTEXITCODE"
         }
     }
+    lmsg "ElasticSearch-InstallService end"
 }
 
 
 function ElasticSearch-StartService()
 {
+    lmsg "ElasticSearch-StartService start"
+
     # Check if the service is installed and start it
     $elasticService = (get-service | Where-Object {$_.Name -match 'elasticsearch'}).Name
     if($elasticService -ne $null)
@@ -362,6 +372,7 @@ function ElasticSearch-StartService()
 
 		lmsg 'Setting the elasticsearch service startup to automatic...'
         Set-Service $elasticService -StartupType Automatic | Out-Null
+        lmsg "ElasticSearch-StartService end"
     }
 }
 
@@ -463,18 +474,22 @@ function Jmeter-Run($unzipLoc)
 }
 function InstallChoco()
 {
+    lmsg "InstallChoco start"
 	iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
 	choco install googlechrome -y
-	choco install notepadplusplus -y
+    choco install notepadplusplus -y
+    lmsg "InstallChoco end"
 }
 
 function AddScheduledTaskCleanLog()
 {
+    lmsg "AddScheduledTaskCleanLog start"
 	$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument '-NoLogo -NoProfile -NonInteractive -executionpolicy bypass  -command "& {Get-ChildItem -Path "C:\elasticSearch\elasticsearch-2.4.3\logs" -Recurse -Force | Where-Object { !$_.PSIsContainer -and $_.CreationTime -lt (Get-Date).AddDays(-15)} | Remove-Item -Force}" > c:\logclean.txt 2>&1'
 
 	$trigger =  New-ScheduledTaskTrigger -Daily -At 9am
 
-	Register-ScheduledTask -Action $action -Trigger $trigger -TaskName cleaneslog -Description "clean es log"
+    Register-ScheduledTask -Action $action -Trigger $trigger -TaskName cleaneslog -Description "clean es log"
+    lmsg "AddScheduledTaskCleanLog end"
 }
 
 function Install-WorkFlow
@@ -499,7 +514,9 @@ function Install-WorkFlow
     $firstDrive = (get-location).Drive.Name
     
     # Download Jdk
-	choco install jdk8 -y
+    lmsg "install jdk8 start"
+    choco install jdk8 -y
+    lmsg "install jdk8 start"
 #	$jdkSource = Download-Jdk $firstDrive
 	
 	# Install Jdk
@@ -575,10 +592,10 @@ function Install-WorkFlow
     {
         $textToAppend = $textToAppend + "`nnetwork.host: $nodeEndpoint"
     }
-
+    lmsg 'install pplugin start'
 	cmd.exe /C "$elasticSearchBin\plugin.bat install mobz/elasticsearch-head"
 	cmd.exe /C "$elasticSearchBin\plugin.bat install appbaseio/dejavu"
-
+    lmsg 'install pplugin end'
 	# configure the cloud-azure plugin, if selected
 	if ($po.Length -ne 0 -and $r.Length -ne 0)
 	{
@@ -651,7 +668,7 @@ function Install-WorkFlow
 
 	# Start service
     ElasticSearch-StartService
-
+    lmsg 'TADA elastic installed!'
     # Verify service TODO: Investigate why verification fails during ARM deployment
     # ElasticSearch-VerifyInstall
 }
@@ -673,4 +690,15 @@ function Startup-Output
     if($marvelOnlyNode) { lmsg 'Node installation mode: Marvel' }
 }
 
-Install-WorkFlow
+try
+{
+    Install-WorkFlow
+
+}
+catch
+{
+    lmsg "unknown error"
+    lmsg $_.Exception.Message
+    throw
+}
+
