@@ -344,7 +344,7 @@ function ElasticSearch-InstallService($scriptPath)
         SetEnv-HeapSize
 
         lmsg 'Installing elasticsearch as a service...'
-        cmd.exe /C "$scriptPath install"
+        cmd.exe /C "set JAVA_HOME=C:\Program Files\Java\jdk1.8.0_162 & $scriptPath install"
         if ($LASTEXITCODE) {
             throw "Command '$scriptPath': exit code: $LASTEXITCODE"
         }
@@ -705,4 +705,3 @@ catch
     lmsg $_.Exception.Message
     throw
 }
-
