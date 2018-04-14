@@ -516,8 +516,11 @@ function Install-WorkFlow
     # Download Jdk
     lmsg "install jdk8 start"
     choco install jdk8 -y
-    lmsg "install jdk8 start"
-    setx /M JAVA_HOME "C:\Program Files\Java\jdk1.8.0_162"
+    lmsg "install jdk8 end"
+    lmsg "sleep start"
+    Start-Sleep 300
+    lmsg "sleep end"
+    #setx /M JAVA_HOME "C:\Program Files\Java\jdk1.8.0_162"
 #	$jdkSource = Download-Jdk $firstDrive
 	
 	# Install Jdk
@@ -594,8 +597,8 @@ function Install-WorkFlow
         $textToAppend = $textToAppend + "`nnetwork.host: $nodeEndpoint"
     }
     lmsg 'install pplugin start'
-	cmd.exe /C "$elasticSearchBin\plugin.bat install mobz/elasticsearch-head -b"
-	cmd.exe /C "$elasticSearchBin\plugin.bat install appbaseio/dejavu -b"
+	cmd.exe /C "set JAVA_HOME=C:\Program Files\Java\jdk1.8.0_162 & $elasticSearchBin\plugin.bat install mobz/elasticsearch-head -b"
+	cmd.exe /C "set JAVA_HOME=C:\Program Files\Java\jdk1.8.0_162 & $elasticSearchBin\plugin.bat install appbaseio/dejavu -b"
     lmsg 'install pplugin end'
 	# configure the cloud-azure plugin, if selected
 	if ($po.Length -ne 0 -and $r.Length -ne 0)
