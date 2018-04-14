@@ -594,7 +594,7 @@ function Install-WorkFlow
     }
     lmsg 'install pplugin start'
 	cmd.exe /C "$elasticSearchBin\plugin.bat install mobz/elasticsearch-head -b"
-	cmd.exe /C "$elasticSearchBin\plugin.bat install appbaseio/dejavu -b"
+	#cmd.exe /C "$elasticSearchBin\plugin.bat install appbaseio/dejavu -b"
     lmsg 'install pplugin end'
 	# configure the cloud-azure plugin, if selected
 	if ($po.Length -ne 0 -and $r.Length -ne 0)
