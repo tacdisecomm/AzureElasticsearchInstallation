@@ -534,7 +534,7 @@ function Install-WorkFlow
 	$elasticSearchInstallLocation = Install-ElasticSearch $firstDrive $elasticSearchZip
 
 	# Set JAVA_HOME
- #   SetEnv-JavaHome $jdkInstallLocation
+    SetEnv-JavaHome "C:\Program Files\Java\jdk1.8.0_162"
 	
 	# Configure cluster name and other properties
 	# Cluster name
